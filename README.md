@@ -1,10 +1,5 @@
-# image_converter
-이미지 변환기
-#소개
-실습에서 배운 코드로 .hex를 .ppm으로 변환하기 아래는 블록 다이어그램
-<img width="1360" height="776" alt="Image" src="https://github.com/user-attachments/assets/d6b4cee4-b004-42da-9f65-920ab6e97b40" />
-
-## 1. 프로젝트 개요
+# Image_converter
+## 1. Introduction
 
 본 프로젝트는 Verilog HDL을 이용하여 이미지 프로세싱 파이프라인 중 Sobel와 laplacian(8방향향) 필터를 직접 구현하고, 테스트벤치를 통해 `.hex` 형식의 입력 파일을 받아 `.ppm` 이미지로 출력하는 시스템을 구축하는 것을 목표로 하였다. 주요 처리 과정은 다음과 같다:
 
@@ -14,21 +9,10 @@
 - Magnitude 계산 및 스케일링
 - `o_data_r/g/b`로 결과 출력 후 `.ppm` 생성
 
-## 2-1. 시행착오 및 문제 해결 과정
+  <img width="1360" height="776" alt="Image" src="https://github.com/user-attachments/assets/d6b4cee4-b004-42da-9f65-920ab6e97b40" />
 
-### [1] 출력값이 `0` 또는 `1`로만 나오는 문제
 
-- **문제 원인**: `Gx`, `Gy`는 signed 11bit (`BW+2`)였으나, magnitude를 계산 후 별도 스케일링 없이 그대로 8bit로 클램핑하여 출력한 것이 문제였다.
-- **해결 과정**:
-  - `abs(Gx) + abs(Gy)` 값을 계산한 후, `if > 255 -> clamp` 조건으로 제한
-  
-### [2] 포트 크기 불일치 오류 (vsim-3015)
-
-Warning: Port size (8) does not match connection size (1) for port 'o_data_r'.
-- **문제 원인**: wrap.sv 상단 포트 선언부에서 o_data_r/g/b 와이어가 제대로 8bit로 선언되지 않았음
-- **해결 과정**: write 선언으로 고침
-
-## 2-2. 코드 정리 및 해설
+## 2-1. Code Overview and Explanation
 
 ### ISP_sobel 코드
 module ISP_sobel #(
@@ -191,18 +175,12 @@ module ISP_sobel #(
 
 endmodule
 
-## 2-3. 결과
+## 2-2. Results
 결과 이미지는 다음과 같다
 
 ![Image](https://github.com/user-attachments/assets/c7e77d53-2de3-441e-83a9-b434fd65e3a2)
 
-## 3-1. 시행착오 및 문제해결
-
-라플라시안 필터 소벨필터는 모두 엣지에서 변화량의 크기를 판단하는 것.
-소벨필터는 루트(Gx^2+Gy^2) ~ \Gx\+\Gy\로 나타냄
-라플라시안 필터는 \Gx\
-
-## 3-2. 코드 정리 및 해설
+## 3-1. Code Overview and Explanation
 
 ### ISP_laplacian 코드
 module ISP_laplacian #(
@@ -377,28 +355,28 @@ end
 
 endmodule
 
-## 3-3. 결과
+## 3-2. Results
 ![lena_out (2)](https://github.com/user-attachments/assets/46dfabf0-c779-49ec-88ee-80359b1fe2a2)
 
 
-# 4. 결과 비교
+# 4. Comparative Analysis
 
-## 🔹 Sobel 필터
+## 🔹 Sobel filter
 - `Gx`, `Gy` 방향 각각 gradient 계산
 - 절댓값 후 합산하여 magnitude 추출  
   (예: `|Gx| + |Gy|`)
-- 결과를 RGB 채널에 동일하게 출력하여 **Grayscale edge map** 생성
+- 결과를 RGB 채널에 동일하게 출력하여 Grayscale edge map 생성
 
-## 🔹 Laplacian 필터
+## 🔹 Laplacian filter
 - 3×3 커널: `8 × p22 − 주변 8픽셀의 합`
-- 모든 입력 픽셀을 `$signed({1'b0, pXX})` 방식으로 **sign-extend**
+- 모든 입력 픽셀을 `$signed({1'b0, pXX})` 방식으로 sign-extend
 - 연산 결과에 절댓값 + shift 적용 (스케일링)
-- `if (value > 255) value = 255;` 방식으로 **포화 클리핑** 처리
+- `if (value > 255) value = 255;` 방식으로 포화 클리핑 처리
 - RGB 3채널 동일 출력 (grayscale edge image)
 
 ---
 
-## 실험 결과 비교
+## Comparison of Simulation Results
 
 | 항목               | Sobel 필터 결과                              | Laplacian 필터 결과                           |
 |--------------------|----------------------------------------------|-----------------------------------------------|
@@ -409,30 +387,8 @@ endmodule
 
 ---
 
-## 🖼 Sobel 결과
-- 안정적인 윤곽선
-- 부드럽고 두꺼운 외곽선
-- 배경 노이즈 거의 없음
+## 5. Conclusion and Future Work
 
-## 🖼 Laplacian 결과
-- 매우 날카롭고 얇은 윤곽선
-- 디테일, 잡음까지 감지됨
-- 고주파 성분(텍스처) 강조
-
----
-
-## 5. 결론 및 시사점
-
-- **Sobel 필터**는 방향성을 고려한 안정적인 윤곽선 검출에 적합  
-  → 일반적인 엣지 처리 및 사전 처리 필터로 활용 가능
-
-- **Laplacian 필터**는 디테일/고주파 강조에 적합  
-  → 배경 노이즈나 텍스처 감지가 필요할 때 효과적
-
-- Verilog로 직접 구현하면서:
-  - **부호 확장, 비트폭 관리, shift vs 곱셈** 등의 하드웨어적 고려 사항 경험
-  - 후처리 스케일링, 포화 처리 등의 필요성 체감
-
-- 실제 시스템에서는 **Gaussian Blur → Laplacian (LoG)** 구조가  
-  디노이즈와 날카로운 edge 검출을 동시에 만족시킴
-
+본 프로젝트는 Verilog로 구현된 소벨 및 라플라시안 필터의 비교 분석을 수행했다. 소벨 필터는 노이즈에 대해 덜 받는 특성으로 방향성이 명확한 엣지를 검출하는 데 매우 효과적이었으며, 이는 일반적인 엣지 검출 및 전처리 작업에 적합함을 보여준다. 반면, 2차 미분 연산자인 라플라시안 필터는 미세한 디테일과 고주파 성분에 대해 더 뛰어난 민감도를 보였다. 이는 노이즈에 대한 민감도가 증가하는 단점이 있지만, 미세한 질감을 강조해야 하는 경우에서 더 효과적임을 의미한다.   
+Verilog를 이용한 직접적인 하드웨어 구현은 소프트웨어와는 크게 다른 하드웨어 고유의 설계 고려 사항에 대한 중요한 통찰을 제공했다. 주요 과제로는 신중한 비트 폭 할당을 통한 산술 정밀도 관리와 부호 확장의 올바른 처리가 있었다. 또한, 비용이 높은 곱셈기 대신 비트 단위 시프트 연산을 활용하는 것과 같은 하드웨어 자원 최적화를 위한 전략적 결정이 요구되었다. 오버플로우를 방지하기 위한 출력 스케일링 및 포화 연산과 같은 후처리 로직의 필요성 또한 명확히 확인되었다.
+본 연구를 통해 소벨 필터는 노이즈에 강하지만 상대적으로 윤곽선이 두껍게 표현되고, 라플라시안 필터는 윤곽선이 날카롭지만 노이즈에 취약한 상충 관계를 확인했다. 실제 시스템에 적용하기 위해서는 두 필터의 장점을 모두 취할 필요가 있으며, 이에 대한 해결책으로 LoG(Laplacian of Gaussian) 필터를 이용한다. LoG 구조는 먼저 가우시안 블러를 통해 노이즈를 제거하여 소벨 필터와 같은 안정성을 확보한 뒤, 라플라시안 연산으로 날카로운 엣지를 검출한다. 이 방식을 통해 노이즈 억제(디노이즈)와 정밀한 윤곽선 검출이라는 두 가지 목표를 동시에 만족시키는 고성능 시스템을 구현할 수 있을 것으로 기대된다.
