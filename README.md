@@ -47,7 +47,7 @@ module ISP_sobel #(
             else if(enable) out <= in; \         //reset=0이면 out0, enable=1이면 out=in
         end
 
-    //================ Control Delay =================
+    //Control Delay 
     reg valid_1d, valid_2d, valid_3d, valid_4d, valid_5d, valid_6d;
     reg h_first_1d, h_first_2d, h_first_3d, h_first_4d, h_first_5d, h_first_6d;
     reg h_last_1d, h_last_2d, h_last_3d, h_last_4d, h_last_5d, h_last_6d;
@@ -85,7 +85,7 @@ module ISP_sobel #(
     `macro_control_ff(v_last_5d, v_last_4d, gclk)
     `macro_control_ff(v_last_6d, v_last_5d, gclk)
 
-    //================ Grayscale Pipeline ================
+    //Grayscale Pipeline
     wire [BW-1:0] gray_pixel;
     reg  [BW-1:0] gray_pixel_d1, gray_pixel_d2, gray_pixel_d3;   //한클럭식 지연시켜 수평으로 3줄 만듦
 
@@ -101,7 +101,7 @@ module ISP_sobel #(
         end
     end
 
-    //================ Line Buffers ================
+    //Line Buffers
     reg [BW-1:0] line_buffer1 [0:WIDTH-1];   //이전행 ,가로 인덱스 (0 ~ WIDTH-1)
     reg [BW-1:0] line_buffer2 [0:WIDTH-1];   //그 이전행 , 현재행은 gray_pixel_d3
     reg [$clog2(WIDTH)-1:0] addr;
@@ -125,7 +125,7 @@ module ISP_sobel #(
     assign line1_data = line_buffer1[addr];
     assign line2_data = line_buffer2[addr];
 
-    //================ Window =================
+    //Window
     reg [BW-1:0] p11, p12, p13;
     reg [BW-1:0] p21, p22, p23;
     reg [BW-1:0] p31, p32, p33;
@@ -142,7 +142,7 @@ module ISP_sobel #(
         end
     end
 
-    //================ Sobel =================
+    //Sobel
     wire signed [BW+2:0] Gx = (p13 + (p23 << 1) + p33) - (p11 + (p21 << 1) + p31);     //마스크를 코드로 변환함
     wire signed [BW+2:0] Gy = (p31 + (p32 << 1) + p33) - (p11 + (p12 << 1) + p13);     //부호 생김
     reg signed [BW+2:0] Gx_d1, Gy_d1;
@@ -152,7 +152,7 @@ module ISP_sobel #(
         else if (valid_5d) begin Gx_d1 <= Gx; Gy_d1 <= Gy; end
     end
 
-    //================ Magnitude =================
+    //Magnitude
 	wire [BW+2:0] abs_Gx = Gx_d1[BW+2] ? -Gx_d1 : Gx_d1;     //절댓값
 	wire [BW+2:0] abs_Gy = Gy_d1[BW+2] ? -Gy_d1 : Gy_d1;
 	wire [BW+3:0] G_temp = abs_Gx + abs_Gy;
@@ -215,7 +215,7 @@ module ISP_laplacian #(
             else if(enable) out <= in; \
         end
 
-    //================ Control Delay =================
+    //Control Delay 
     reg valid_1d, valid_2d, valid_3d, valid_4d, valid_5d, valid_6d;
     reg h_first_1d, h_first_2d, h_first_3d, h_first_4d, h_first_5d, h_first_6d;
     reg h_last_1d, h_last_2d, h_last_3d, h_last_4d, h_last_5d, h_last_6d;
@@ -253,7 +253,7 @@ module ISP_laplacian #(
     `macro_control_ff(v_last_5d, v_last_4d, gclk)
     `macro_control_ff(v_last_6d, v_last_5d, gclk)
 
-    //================ Grayscale Pipeline ================
+    //Grayscale Pipeline 
     wire [BW-1:0] gray_pixel;
     reg  [BW-1:0] gray_pixel_d1, gray_pixel_d2, gray_pixel_d3;
 
@@ -269,7 +269,7 @@ module ISP_laplacian #(
         end
     end
 
-    //================ Line Buffers ================
+    //Line Buffers 
     reg [BW-1:0] line_buffer1 [0:WIDTH-1];
     reg [BW-1:0] line_buffer2 [0:WIDTH-1];
     reg [$clog2(WIDTH)-1:0] addr;
@@ -293,7 +293,7 @@ module ISP_laplacian #(
     assign line1_data = line_buffer1[addr];
     assign line2_data = line_buffer2[addr];
 
-    //================ Window =================
+    //Window
     reg [BW-1:0] p11, p12, p13;
     reg [BW-1:0] p21, p22, p23;
     reg [BW-1:0] p31, p32, p33;
@@ -310,7 +310,7 @@ module ISP_laplacian #(
         end
     end
 
-    //================ laplacian =================
+    //laplacian
     wire signed [BW+3:0] Gx = ($signed({1'b0,p22}) <<< 3)     //p22 <<< 3 는 unsign이고 p11~p33역시 unsign 하지만 언사인드끼리 연산해도 변수(Gx)가 사인드니까 언사인드를 사인드 시켜줘야함.
    - ($signed({1'b0,p11}) + $signed({1'b0,p12}) + $signed({1'b0,p13})
    +  $signed({1'b0,p21}) + $signed({1'b0,p23})
@@ -324,7 +324,7 @@ module ISP_laplacian #(
         else if (valid_5d) begin Gx_d1 <= Gx; end
     end
 
-    //================ Magnitude =================
+    //Magnitude
 	wire [BW+3:0] abs_Gx = Gx_d1[BW+2] ? -Gx_d1 : Gx_d1; 
 	wire [BW+3:0] G_temp = abs_Gx;
 	wire [BW+3:0] G_scaled = G_temp >> 2;  
@@ -332,7 +332,7 @@ module ISP_laplacian #(
 	reg [BW-1:0] edge_magnitude;
 
 	
-	 //================ saturation =================	
+	 //saturation 
 	always @(posedge gclk or negedge reset) begin
     if (!reset) edge_magnitude <= 0;
     else if (valid_6d) begin
@@ -361,13 +361,13 @@ endmodule
 
 # 4. Comparative Analysis
 
-## 🔹 Sobel filter
+## Sobel filter
 - `Gx`, `Gy` 방향 각각 gradient 계산
 - 절댓값 후 합산하여 magnitude 추출  
   (예: `|Gx| + |Gy|`)
 - 결과를 RGB 채널에 동일하게 출력하여 Grayscale edge map 생성
 
-## 🔹 Laplacian filter
+## Laplacian filter
 - 3×3 커널: `8 × p22 − 주변 8픽셀의 합`
 - 모든 입력 픽셀을 `$signed({1'b0, pXX})` 방식으로 sign-extend
 - 연산 결과에 절댓값 + shift 적용 (스케일링)
